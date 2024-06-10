@@ -20,7 +20,11 @@ from django.urls import path, include, re_path
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from django.conf import settings
+from django.conf.urls.static import static
+from rest_framework_simplejwt import views
 
+urlpatterns = []
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -35,18 +39,40 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/v1/api-auth/", include("rest_framework.urls")),
-    re_path(r"^api/v1/auth/", include("djoser.urls.jwt")),
-    path(
-        "api/v1/swagger/",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
-    path(
-        "api/v1/redoc/",
-        schema_view.with_ui("redoc", cache_timeout=0),
-        name="schema-redoc",
-    ),
-]
+urlpatterns = (
+    [
+        path("admin/", admin.site.urls),
+        path("api/v1/api-auth/", include("rest_framework.urls")),
+        path(
+            "api/v1/swagger/",
+            schema_view.with_ui("swagger", cache_timeout=0),
+            name="schema-swagger-ui",
+        ),
+        path(
+            "api/v1/redoc/",
+            schema_view.with_ui("redoc", cache_timeout=0),
+            name="schema-redoc",
+        ),
+        path(
+            "api/v1/tasks/", include("task_management.urls")
+        ),  # Добавьте это для включения маршрутов задач
+        path(
+            "api/v1/user/", include("user.urls")
+        ),  # Добавьте это для включения маршрутов задач
+        re_path(
+            r"api/v1/jwt/create/?",
+            views.TokenObtainPairView.as_view(),
+            name="jwt-create",
+        ),
+        re_path(
+            r"api/v1/jwt/refresh/?",
+            views.TokenRefreshView.as_view(),
+            name="jwt-refresh",
+        ),
+        re_path(
+            r"api/v1/jwt/verify/?", views.TokenVerifyView.as_view(), name="jwt-verify"
+        ),
+    ]
+    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+)
